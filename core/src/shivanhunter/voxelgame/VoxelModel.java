@@ -60,6 +60,21 @@ public class VoxelModel {
 	// the wireframe widget representing the root location
 	private Model rootModel;
 	public ModelInstance rootInstance;
+
+	/* 
+	 * Constants: number of verts and indices in a quad, number of floats
+	 * in a vertex
+	 */
+    public static final int VERTS = 4, INDS = 6, FLOATS = 9;
+    
+    /*
+     * Data in a vertex: 3 position floats, 3 color floats, 3 normal floats
+     */
+    public static final VertexAttributes attributes = new VertexAttributes(
+    		new VertexAttribute(VertexAttributes.Usage.Position, 3, "a_position"),
+    		new VertexAttribute(VertexAttributes.Usage.ColorUnpacked, 3, "a_color"),
+    		new VertexAttribute(VertexAttributes.Usage.Normal, 3, "a_normal")
+    		);
 	
 	/*
 	 * Axis is used to select an orthogonal direction in 3d space
@@ -147,20 +162,6 @@ public class VoxelModel {
 	 * the size, root location or any blockdata is changed.
 	 */
 	private void updateMesh() {
-		/* 
-		 * Constants: number of verts and indices in a quad, number of floats
-		 * in a vertex
-		 */
-        final int VERTS = 4, INDS = 6, FLOATS = 9;
-        
-        /*
-         * Data in a vertex: 3 position floats, 3 color floats, 3 normal floats
-         */
-        VertexAttributes attributes = new VertexAttributes(
-        		new VertexAttribute(VertexAttributes.Usage.Position, 3, "a_position"),
-        		new VertexAttribute(VertexAttributes.Usage.ColorUnpacked, 3, "a_color"),
-        		new VertexAttribute(VertexAttributes.Usage.Normal, 3, "a_normal")
-        		);
         
         // count of quads to add
         int numQuads = 0;

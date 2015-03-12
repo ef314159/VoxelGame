@@ -30,7 +30,7 @@ public class World implements ApplicationListener {
 	
 	public float gravity = -32f;
 	
-	private int renderDistance = 16;
+	private int renderDistance = 18;
 	private Map map;
 	private List<Mob> mobs = new LinkedList<Mob>();
 	
@@ -60,7 +60,7 @@ public class World implements ApplicationListener {
             }
         }*/
         
-        player = new Player(this, new Vector3(64, 129, 1), .3f, 1.5f, 8f);
+        player = new Player(this, new Vector3(64, 257, 1), .3f, 1.5f, 8f);
         mobs.add(player);
 		
 		cam = new PerspectiveCamera(FOV, Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
@@ -107,11 +107,11 @@ public class World implements ApplicationListener {
 		if (unitZ < 0) unitZ += Region.WIDTH;
 		
 		if (map.get(regionX, regionZ).collide(unitX, unitY, unitZ)) {
-			while (unitY < Region.HEIGHT-1 && map.get(regionX, regionZ).collide(unitX, unitY, unitZ)) {
+			while (unitY < Region.HEIGHT && map.get(regionX, regionZ).collide(unitX, unitY, unitZ)) {
 				unitY++;
 			}
 		} else {
-			while (unitY > 0 && !map.get(regionX, regionZ).collide(unitX, unitY, unitZ)) {
+			while (unitY >= 0 && !map.get(regionX, regionZ).collide(unitX, unitY, unitZ)) {
 				unitY--;
 			}
 			unitY++;
@@ -174,7 +174,10 @@ public class World implements ApplicationListener {
         modelBatch.end();
         
         String debugText = 
-        		"FPS: " + (int)(1/deltaTime) + "\n" +
+        		"FPS: " + (int)(1/deltaTime) + "\n\n" +
+        		"X: " + player.getPosition().x + "\n" +
+        		"Y: " + player.getPosition().y + "\n" +
+        		"Z: " + player.getPosition().z + "\n\n" +
                 map.getDebugInfo();
         
 		debugBatch.begin();

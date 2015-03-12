@@ -113,8 +113,6 @@ public class Region implements Comparable<Region> {
 		
         final int VERTS = 4, INDS = 6, FLOATS = 9;
         
-        int numQuads = 0;
-        
         ArrayList<Float> verticesList = new ArrayList<Float>();
         
         for (int i = 0; i < WIDTH; ++i) {
@@ -135,7 +133,6 @@ public class Region implements Comparable<Region> {
                 					i,   j+1, k,
                 					r, g, b,
                 					Axis.NEG_X);
-                			numQuads++;
                 		}
                 		if (!isOpaque(n.get(i+1, j, k))) {
                 			appendQuad(n, verticesList,
@@ -145,7 +142,6 @@ public class Region implements Comparable<Region> {
                 					i+1, j,   k+1,
                 					r, g, b,
                 					Axis.POS_X);
-                			numQuads++;
                 		}
                 		if (j > 0 && !isOpaque(data[i][j-1][k])) {
                 			appendQuad(n, verticesList,
@@ -155,7 +151,6 @@ public class Region implements Comparable<Region> {
                 					i,   j,   k+1,
                 					r, g, b,
                 					Axis.NEG_Y);
-                			numQuads++;
                 		}
                 		if (j == HEIGHT-1 || !isOpaque(data[i][j+1][k])) {
                 			appendQuad(n, verticesList,
@@ -165,7 +160,6 @@ public class Region implements Comparable<Region> {
                 					i+1, j+1, k,
                 					r, g, b,
                 					Axis.POS_Y);
-                			numQuads++;
                 		}
                 		if (!isOpaque(n.get(i, j, k-1))) {
                 			appendQuad(n, verticesList,
@@ -175,7 +169,6 @@ public class Region implements Comparable<Region> {
                 					i+1, j,   k,
                 					r, g, b,
                 					Axis.NEG_Z);
-                			numQuads++;
                 		}
                 		if (!isOpaque(n.get(i, j, k+1))) {
                 			appendQuad(n, verticesList,
@@ -185,12 +178,16 @@ public class Region implements Comparable<Region> {
                 					i,   j+1, k+1,
                 					r, g, b,
                 					Axis.POS_Z);
-                			numQuads++;
                 		}
                 	}
                 }
             }
         }
+        
+        int numQuads = verticesList.size()/FLOATS/VERTS;
+        
+        vertices = new float[numQuads*FLOATS*VERTS];
+        
         indices = new short[numQuads*INDS];
         
         for (int i = 0; i < numQuads; ++i) {
@@ -202,8 +199,6 @@ public class Region implements Comparable<Region> {
         	indices[i*INDS + 4] = (short)(i*VERTS + 3);
         	indices[i*INDS + 5] = (short)(i*VERTS + 0);
         }
-        
-        vertices = new float[numQuads*FLOATS*VERTS];
         
         for (int i = 0; i < verticesList.size(); ++i) {
         	vertices[i] = verticesList.get(i);

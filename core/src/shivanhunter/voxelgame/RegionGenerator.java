@@ -1,26 +1,31 @@
 package shivanhunter.voxelgame;
 
+import com.badlogic.gdx.math.MathUtils;
+
 public class RegionGenerator {
 	public byte[][][] generate(int x, int z, long seed) {
-		float[][][] data1 = generateOctave(x, z, 255, seed);
-		float[][][] data2 = generateOctave(x, z, 127, seed);
-		float[][][] data3 = generateOctave(x, z, 31, seed);
-		float[][][] data4 = generateOctave(x, z, 13, seed);
+		float[][][] data1 = generateOctave(x, z, 257, seed);
+		float[][][] data2 = generateOctave(x, z, 125, seed);
+		float[][][] data3 = generateOctave(x, z, 59, seed);
+		float[][][] data4 = generateOctave(x, z, 31, seed);
+		float[][][] data5 = generateOctave(x, z, 11, seed);
 		
 		byte[][][] cells = new byte[Region.WIDTH][Region.HEIGHT][Region.WIDTH];
 		
 		for (int i = 0; i < Region.WIDTH; ++i) {
 			for (int j = 0; j < Region.HEIGHT; ++j) {
 				for (int k = 0; k < Region.WIDTH; ++k) {
-					if (data1[i][j][k]*6f -
-							data2[i][j][k] -
-							data3[i][j][k]/3f -
-							data4[i][j][k]/10f -
+					if (data1[i][j][k]*8f +
+							data2[i][j][k]*3f +
+							data3[i][j][k] +
+							data4[i][j][k]/2f +
+							data5[i][j][k]/6f -
 							getHeightBias(j) >
-							1f) {
+							6f) {
 						cells[i][j][k] = 1;
 					} else if (j > 0) {
-						if (cells[i][j-1][k] == 1 && data4[i][j][k] > 0.85f) {
+						float data = data4[i][j][k] + data5[i][j][k] + Noise.get(i, j, k, seed)*.4f;
+						if (cells[i][j-1][k] == 1 && data > 1.65f) {
 							cells[i][j][k] = 2;
 						}
 					}
@@ -32,7 +37,7 @@ public class RegionGenerator {
 	}
 	
 	public static float getHeightBias(int height) {
-		return height/32f;
+		return MathUtils.log2(height) - MathUtils.log2(Region.HEIGHT-height);
 	}
 	
 	private float[][][] generateOctave(int x, int z, int octaveSize, long seed) {
