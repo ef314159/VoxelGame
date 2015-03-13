@@ -6,7 +6,7 @@ public class Noise {
 		FNV_OFFSETBASIS = 0x811C9DC5;
 	
 	private static final float
-		INV_2_31 = 1.0f / 4294967296f;
+		INV_2_31 = 1.0f / 2147483648f;
 	
 	/**
 	 * Random noise function to generate landscape. Generates 2D noise given a
@@ -36,7 +36,8 @@ public class Noise {
 		hash = FNV_hash(hash, (int)seed);
 		hash = FNV_hash(hash, (int)seed >> 32);
 		
-		return .5f - hash*INV_2_31;
+		//if (hash*INV_2_31 > 0) return 1; else return -1;
+		return hash*INV_2_31;
 	}
 	
 	private static int FNV_hash(int hash, int value) {

@@ -11,7 +11,6 @@ import com.badlogic.gdx.graphics.VertexAttribute;
 import com.badlogic.gdx.graphics.VertexAttributes;
 import com.badlogic.gdx.graphics.g3d.Material;
 import com.badlogic.gdx.graphics.g3d.Model;
-import com.badlogic.gdx.graphics.g3d.ModelInstance;
 import com.badlogic.gdx.graphics.g3d.attributes.ColorAttribute;
 import com.badlogic.gdx.graphics.g3d.utils.ModelBuilder;
 import com.badlogic.gdx.math.Vector3;
@@ -52,20 +51,12 @@ public class VoxelModel {
 	
 	// the model representing the voxel data
 	private Model model;
-	
-	// the wireframe box representing the bounds of the model
-	private Model boundsModel;
-	public ModelInstance boundsInstance;
-	
-	// the wireframe widget representing the root location
-	private Model rootModel;
-	public ModelInstance rootInstance;
 
 	/* 
 	 * Constants: number of verts and indices in a quad, number of floats
 	 * in a vertex
 	 */
-    public static final int VERTS = 4, INDS = 6, FLOATS = 9;
+    private static final int VERTS = 4, INDS = 6, FLOATS = 9;
     
     /*
      * Data in a vertex: 3 position floats, 3 color floats, 3 normal floats
@@ -153,8 +144,6 @@ public class VoxelModel {
 	 */
 	public void dispose() {
 		model.dispose();
-		boundsModel.dispose();
-		rootModel.dispose();
 	}
 	
 	/**
@@ -162,10 +151,6 @@ public class VoxelModel {
 	 * the size, root location or any blockdata is changed.
 	 */
 	private void updateMesh() {
-        
-        // count of quads to add
-        int numQuads = 0;
-        
         // temp list of vertices
         ArrayList<Float> verticesList = new ArrayList<Float>();
     	float r, g, b;
@@ -192,7 +177,6 @@ public class VoxelModel {
                 					i,   j+1, k,
                 					r,   g,   b,  
                 					Axis.NEG_X);
-                			numQuads++;
                 		}
                 		if (i == size-1 || blocks[i+1][j][k] == 0) {
                 			appendQuad(
@@ -203,7 +187,6 @@ public class VoxelModel {
                 					i+1, j,   k+1,
                 					r,   g,   b,
                 					Axis.POS_X);
-                			numQuads++;
                 		}
                 		if (j == 0 || blocks[i][j-1][k] == 0) {
                 			appendQuad(
@@ -214,7 +197,6 @@ public class VoxelModel {
                 					i,   j,   k+1,
                 					r,   g,   b,
                 					Axis.NEG_Y);
-                			numQuads++;
                 		}
                 		if (j == size-1 || blocks[i][j+1][k] == 0) {
                 			appendQuad(
@@ -225,7 +207,6 @@ public class VoxelModel {
                 					i+1, j+1, k,
                 					r,   g,   b,
                 					Axis.POS_Y);
-                			numQuads++;
                 		}
                 		if (k == 0 || blocks[i][j][k-1] == 0) {
                 			appendQuad(
@@ -236,7 +217,6 @@ public class VoxelModel {
                 					i+1, j,   k,
                 					r,   g,   b,
                 					Axis.NEG_Z);
-                			numQuads++;
                 		}
                 		if (k == size-1 || blocks[i][j][k+1] == 0) {
                 			appendQuad(
@@ -247,12 +227,13 @@ public class VoxelModel {
                 					i,   j+1, k+1,
                 					r,   g,   b,
                 					Axis.POS_Z);
-                			numQuads++;
                 		}
                 	}
                 }
             }
         }
+        
+        int numQuads = verticesList.size()/FLOATS/VERTS;
 
         // create a mesh with room for the generated polygons
         Mesh mesh = new Mesh(true, numQuads*VERTS, numQuads*INDS, attributes);
@@ -428,6 +409,7 @@ public class VoxelModel {
 		float ambientOcclusion3 = getAmbientOcclusion((int)x3, (int)y3, (int)z3, axis);
 		float ambientOcclusion4 = getAmbientOcclusion((int)x4, (int)y4, (int)z4, axis);
 		
+		// scale the verts up/down based on scale factor and move them to rootLocation
 		x1 = (x1 + rootLocation.x) * scale/128f;
 		y1 = (y1 + rootLocation.y) * scale/128f;
 		z1 = (z1 + rootLocation.z) * scale/128f;

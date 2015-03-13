@@ -120,9 +120,8 @@ public class World implements ApplicationListener {
 	}
 	
 	@Override public void render() {
-		Vector2 playerRegion = Region.getRegionAt(player.getPosition().x, player.getPosition().z);
-		//map.forceGenerate((int)playerRegion.x, (int)playerRegion.y);
-		map.setPlayerRegion((int)playerRegion.x, (int)playerRegion.y);
+		MapCoord playerRegion = Region.getRegionAt(player.getPosition().x, player.getPosition().z);
+		map.setPlayerRegion((int)playerRegion.x, (int)playerRegion.z);
 		
 		// go go gadget variable timestep
 		float deltaTime = MathUtils.clamp(Gdx.graphics.getDeltaTime(), 0, .1f);
