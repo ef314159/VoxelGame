@@ -30,6 +30,7 @@ public class Noise {
 	 */
 	public static float get(int x, int y, int z, long seed) {
 		int hash = FNV_OFFSETBASIS;
+		
 		hash = FNV_hash(hash, x);
 		hash = FNV_hash(hash, y);
 		hash = FNV_hash(hash, z);
@@ -40,6 +41,14 @@ public class Noise {
 		return hash*INV_2_31;
 	}
 	
+	/**
+	 * Hashes four octets of data as an integer into an existing hash value
+	 * using the FNV hashing algorithm.
+	 * 
+	 * @param hash the existing hash (use FNV_OFFSETBASIS to start hashing)
+	 * @param value the value to hash
+	 * @return the new hash
+	 */
 	private static int FNV_hash(int hash, int value) {
 		hash ^= (byte)value;
 		hash *= FNV_PRIME;

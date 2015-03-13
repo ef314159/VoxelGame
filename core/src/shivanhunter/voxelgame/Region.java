@@ -28,7 +28,7 @@ import com.badlogic.gdx.math.Vector2;
 public class Region implements Comparable<Region> {
 	// region size consts
 	// do not have to be powers of 2, but WIDTH must be larger than AO_Quality
-	public static final int WIDTH = 32;
+	public static final int WIDTH = 16;
 	public static final int HEIGHT = 256;
 	
 	// raw block data used for collision and mesh creation

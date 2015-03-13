@@ -14,12 +14,12 @@ public class RegionGenerator {
 	 */
 	public byte[][][] generate(int x, int z, long seed) {
 		// get octave stuffs
-		float[][][] data1 = generateOctave(x, z, 191, seed);
-		float[][][] data2 = generateOctave(x, z, 111, seed);
-		float[][][] data3 = generateOctave(x, z, 59, seed);
-		float[][][] data4 = generateOctave(x, z, 31, seed);
-		float[][][] data5 = generateOctave(x, z, 11, seed);
-		float[][][] data6 = generateOctave(x, z, 5, seed);
+		float[][][] data1 = generateOctave(x, z, 65, seed);
+		float[][][] data2 = generateOctave(x, z, 41, seed);
+		float[][][] data3 = generateOctave(x, z, 23, seed);
+		float[][][] data4 = generateOctave(x, z, 14, seed);
+		float[][][] data5 = generateOctave(x, z, 9, seed);
+		float[][][] data6 = generateOctave(x, z, 3, seed);
 		
 		// allocate array to return
 		byte[][][] cells = new byte[Region.WIDTH][Region.HEIGHT][Region.WIDTH];
@@ -28,13 +28,14 @@ public class RegionGenerator {
 			for (int j = 0; j < Region.HEIGHT; ++j) {
 				for (int k = 0; k < Region.WIDTH; ++k) {
 					// add together to get value, check if value is greater than a given amount
-					if (data2[i][j][k]*7f +
-							data2[i][j][k]*5f +
+					if (data1[i][j][k]*3f +
+							data2[i][j][k]*6f +
 							data3[i][j][k] +
-							data4[i][j][k]/2f +
-							data5[i][j][k]/5f +
-							data6[i][j][k]/8f -
-							getHeightBias(j, .1f) >
+							data4[i][j][k]/3f +
+							data5[i][j][k]/8f +
+							data6[i][j][k]/16f -
+							getHeightBias(j, 1f) +
+							((j%32)*(j%32))/400f*Math.max(data1[i][j][k]+0.25f, 0) >
 							0f) {
 						cells[i][j][k] = 1;
 					}
