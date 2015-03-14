@@ -43,7 +43,7 @@ public class Map {
 	 * main thread, the number of worker threads is limited.
 	 */
 	private int activeThreads = 0;
-	private static final int maxThreads = 3;
+	private static final int maxThreads = 2;
 	
 	/*
 	 * A Region "r" is created in two passes: First, the raw block data is

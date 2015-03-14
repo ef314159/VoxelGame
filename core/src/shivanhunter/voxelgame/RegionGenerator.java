@@ -28,24 +28,31 @@ public class RegionGenerator {
 			for (int j = 0; j < Region.HEIGHT; ++j) {
 				for (int k = 0; k < Region.WIDTH; ++k) {
 					// add together to get value, check if value is greater than a given amount
-					if (data1[i][j][k]*3f +
-							data2[i][j][k]*6f +
-							data3[i][j][k] +
-							data4[i][j][k]/3f +
-							data5[i][j][k]/8f +
-							data6[i][j][k]/16f -
-							getHeightBias(j, 1f) +
-							((j%32)*(j%32))/400f*Math.max(data1[i][j][k]+0.25f, 0) >
-							0f) {
+					if (data1[i][j][k]*3f
+							+ data2[i][j][k]*6f
+							+ data3[i][j][k]
+							+ data4[i][j][k]/2f
+							+ data5[i][j][k]/4f
+							+ data6[i][j][k]/8f
+							- getHeightBias(j, 4f)
+						//	+ ((j%32)*(j%32))/400f*Math.max(data1[i][j][k]+0.25f, 0)
+							> 0f) {
 						cells[i][j][k] = 1;
 					}
 					// else, if this is an open cell and the cell below is a block
 					else if (j > 0 && cells[i][j-1][k] == 1) {
 						// get another value to determine whether to place a deco object
-						if (data5[i][j][k] +
-								data6[i][j][k] +
-								Noise.get(i, j, k, seed)*0.75f > 1f) {
-							cells[i][j][k] = 2;
+						float value = data5[i][j][k] + data6[i][j][k] + Noise.get(i, j, k, seed)*0.75f;
+						if (value > 1) {
+							byte model = (byte)Noise.get(i, j+1, k, seed, 4);
+							//System.out.println(model);
+							cells[i][j][k] = (byte)(2+model);
+						} else {
+							float value2 = data4[i][j][k] + Noise.get(i, j, k, seed)*0.2f;
+							if (value2 > .5f) {
+								byte model = (byte)Noise.get(i, j+1, k, seed, 4);
+								cells[i][j][k] = (byte)(2+4+model);
+							} 
 						}
 					}
 				}
@@ -79,8 +86,8 @@ public class RegionGenerator {
 	 * Noise.get(). Otherwise, noise is interpolated between points at
 	 * octaveSize-size intervals using trilinear interpolation.
 	 * 
-	 * @param x the region's x coordinate
-	 * @param z the region's z coordinate
+	 * @param x the lowest block coordinate in x of the region
+	 * @param z the lowest block coordinate in z of the region
 	 * @param octaveSize the size of the noise octave 
 	 * @param seed the seed to use when getting noise data
 	 * @return noise data for the given Region with the given octave size
@@ -99,37 +106,47 @@ public class RegionGenerator {
 				}
 			}
 		} else {
-			for (int i = x; i < x+Region.WIDTH; ++i) {
-				for (int j = 0; j < Region.HEIGHT; ++j) {
-					for (int k = z; k < z+Region.WIDTH; ++k) {
+			int xmin, xmax, ymin, ymax, zmin, zmax;
+			float[][][] corners = new float[2][2][2];
+			
+			// for each octave in or partly in the region
+			for (int octX = floorRange(x, octaveSize); octX < x+Region.WIDTH; octX += octaveSize) {
+				for (int octY = floorRange(0, octaveSize); octY < Region.HEIGHT; octY += octaveSize) {
+					for (int octZ = floorRange(z, octaveSize); octZ < z+Region.WIDTH; octZ += octaveSize) {
+
+						xmin = Math.max(octX, x);
+						xmax = Math.min(octX + octaveSize, x + Region.WIDTH);
+						ymin = Math.max(octY, 0);
+						ymax = Math.min(octY + octaveSize, Region.HEIGHT);
+						zmin = Math.max(octZ, z);
+						zmax = Math.min(octZ + octaveSize, z + Region.WIDTH);
 						
-						int octaveX0 = floorRange(i, octaveSize),
-								octaveY0 = floorRange(j, octaveSize),
-								octaveZ0 = floorRange(k, octaveSize);
+						for (int i = 0; i < 2; i++) {
+							for (int j = 0; j < 2; j++) {
+								for (int k = 0; k < 2; k++) {
+									corners[i][j][k] = Noise.get(
+											octX + i*octaveSize,
+											octY + j*octaveSize,
+											octZ + k*octaveSize,
+											seed);
+								}
+							}
+						}
 						
-						int octaveX1 = octaveX0 + octaveSize,
-								octaveY1 = octaveY0 + octaveSize,
-								octaveZ1 = octaveZ0 + octaveSize;
-						
-						float interpX = (i-octaveX0)/(float)octaveSize,
-								interpY = (j-octaveY0)/(float)octaveSize,
-								interpZ = (k-octaveZ0)/(float)octaveSize;
-						
-						data[i-x][j][k-z] = Noise.get(i, j, k, seed);
-						data[i-x][j][k-z] = trilinearInterpolation(
-								Noise.get(octaveX0, octaveY0, octaveZ0, seed),
-								Noise.get(octaveX0, octaveY0, octaveZ1, seed),
-								Noise.get(octaveX0, octaveY1, octaveZ0, seed),
-								Noise.get(octaveX0, octaveY1, octaveZ1, seed),
-								Noise.get(octaveX1, octaveY0, octaveZ0, seed),
-								Noise.get(octaveX1, octaveY0, octaveZ1, seed),
-								Noise.get(octaveX1, octaveY1, octaveZ0, seed),
-								Noise.get(octaveX1, octaveY1, octaveZ1, seed),
-								interpX, interpY, interpZ);
+						for (int i = xmin; i < xmax; ++i) {
+							for (int j = ymin; j < ymax; ++j) {
+								for (int k = zmin; k < zmax; ++k) {
+									data[i-x][j][k-z] = trilinearInterpolation(
+											corners,
+											(i-octX)/(float)octaveSize,
+											(j-octY)/(float)octaveSize,
+											(k-octZ)/(float)octaveSize);
+								}
+							}
+						}
 					}
 				}
 			}
-			
 		}
 		
 		return data;
@@ -139,28 +156,18 @@ public class RegionGenerator {
 	 * Performs trilinear interpolation, given eight sampling points at the
 	 * corners of a cube, and the distance along the cube in x, y and z
 	 * 
-	 * @param v000 the value at x0, y0, z0
-	 * @param v001 the value at x0, y0, z1
-	 * @param v010 the value at x0, y1, z0
-	 * @param v011 the value at x0, y1, z1
-	 * @param v100 the value at x1, y0, z0
-	 * @param v101 the value at x1, y0, z1
-	 * @param v110 the value at x1, y1, z0
-	 * @param v111 the value at x1, y1, z1
+	 * @param values the 3D array containing the noise values at the eight cube corners
 	 * @param x the position between x0 and x1, from 0 to 1, to sample
 	 * @param y the position between y0 and y1, from 0 to 1, to sample
 	 * @param z the position between z0 and z1, from 0 to 1, to sample
 	 * @return the interpolation from the given values at the given position
 	 */
-	private static float trilinearInterpolation(
-			float v000, float v001, float v010, float v011,
-			float v100, float v101, float v110, float v111,
-			float x, float y, float z) {
+	private static float trilinearInterpolation(float[][][] values, float x, float y, float z) {
 		
-		float v00z = v000 + (v001 - v000)*z,
-				v01z = v010 + (v011 - v010)*z,
-				v10z = v100 + (v101 - v100)*z,
-				v11z = v110 + (v111 - v110)*z;
+		float v00z = values[0][0][0] + (values[0][0][1] - values[0][0][0])*z,
+				v01z = values[0][1][0] + (values[0][1][1] - values[0][1][0])*z,
+				v10z = values[1][0][0] + (values[1][0][1] - values[1][0][0])*z,
+				v11z = values[1][1][0] + (values[1][1][1] - values[1][1][0])*z;
 		
 		float v0yz = v00z + (v01z - v00z)*y,
 				v1yz = v10z + (v11z - v10z)*y;

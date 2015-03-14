@@ -4,6 +4,8 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.LinkedList;
 
+import shivanhunter.voxelgame.VoxelModel.Axis;
+
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.files.FileHandle;
 import com.badlogic.gdx.graphics.GL20;
@@ -35,6 +37,11 @@ public class Region implements Comparable<Region> {
 	// is a byte[WIDTH][HEIGHT][WIDTH] returned from regionGenerator
 	private byte[][][] data;
 	
+	// data for ambient occlusion lighting applied to models
+	// based on the AO of the quad on the "floor" of the cell, or if none, the
+	// AO of the cell below it
+	private float[][][] modelAO;
+	
 	// region coordinates (not block coordinates) for this region
 	private final int regionX, regionZ;
 	
@@ -58,7 +65,7 @@ public class Region implements Comparable<Region> {
 	 * statically - any Region can create its own ModelInstance of any of these
 	 * Models.
 	 */
-	private static VoxelModel flowers;
+	private static VoxelModel[] deco;
 	
 	// rendering stuff
 	// simple diffuse material used across all Regions
@@ -87,13 +94,26 @@ public class Region implements Comparable<Region> {
 	 * @param generationPriority the region's importance (distance from the player)
 	 */
 	public Region(int regionX, int regionZ, long seed, float generationPriority) {
+		long nanoTime = System.nanoTime();
 		this.regionX = regionX;
 		this.regionZ = regionZ;
 		this.seed = seed;
 		this.generationPriority = generationPriority;
+		
+		modelAO = new float[WIDTH][HEIGHT][WIDTH];
+		
+		for (int i = 0; i < WIDTH; ++i) {
+			for (int j = 0; j < HEIGHT; ++j) {
+				for (int k = 0; k < WIDTH; ++k) {
+					modelAO[i][j][k] = 1;
+				}
+			}
+		}
+		
 		data = new RegionGenerator().generate(regionX*WIDTH, regionZ*WIDTH, seed);
 		
 		mat = new Material(ColorAttribute.createDiffuse(1f, 1f, 1f, 1));
+		System.out.println((System.nanoTime() - nanoTime)/1000000000f);
 	}
 	
 	/**
@@ -103,8 +123,16 @@ public class Region implements Comparable<Region> {
 	 * TODO: gracefully handle exception
 	 */
 	public static void loadDecoModels() {
-		FileHandle file = Gdx.files.internal("deco/flowers.voxel");
-		flowers = new VoxelModel(file.readBytes());
+		deco = new VoxelModel[8];
+		
+		for (int i = 0; i < 4; ++i) {
+			FileHandle file = Gdx.files.internal("deco/flowers" + i + ".voxel");
+			deco[i] = new VoxelModel(file.readBytes());
+		}
+		for (int i = 4; i < 8; ++i) {
+			FileHandle file = Gdx.files.internal("deco/grass" + (i-4) + ".voxel");
+			deco[i] = new VoxelModel(file.readBytes());
+		}
 	}
 	
 	/**
@@ -154,15 +182,18 @@ public class Region implements Comparable<Region> {
         for (int i = 0; i < WIDTH; ++i) {
             for (int j = 0; j < HEIGHT; ++j) {
                 for (int k = 0; k < WIDTH; ++k) {
-                	if (data[i][j][k] == 2) {
-                		ModelInstance instance = new ModelInstance(flowers.getModel());
+                	if (data[i][j][k] > 1) {
+                		ModelInstance instance = new ModelInstance(deco[data[i][j][k]-2].getModel());
                 		
                 		instance.transform.translate(
                 				regionX*WIDTH + i + 0.5f,
                 				j,
                 				regionZ*WIDTH + k + 0.5f);
                 		
-                		instance.transform.rotate(0, 1, 0, (int)(Noise.get(i, j+1, k, seed)*3f)*90);
+                		instance.transform.rotate(0, 1, 0, Noise.get(i, j+1, k, seed, 4)*90);
+                		
+                		instance.materials.get(0).set(ColorAttribute.createDiffuse(
+                				modelAO[i][j][k], modelAO[i][j][k], modelAO[i][j][k], 1));
                 		decoLayer.add(instance);
                 	}
                 }
@@ -202,7 +233,7 @@ public class Region implements Comparable<Region> {
                     	g = 0.85f;
                     	b = 0.0f;
                     	
-                    	c = MathUtils.random()*.02f;
+                    	c = MathUtils.random()*.01f;
                     	r += c; 
                     	g += c;
                     	g += c;
@@ -499,7 +530,7 @@ public class Region implements Comparable<Region> {
 	 * @param b the blue channel of the vertex color
 	 * @param axis the axis of the quad normal
 	 */
-	public static void appendQuad(Neighborhood n,
+	public void appendQuad(Neighborhood n,
 			ArrayList<Float> vertexList, 
 			float x1, float y1, float z1,
 			float x2, float y2, float z2,
@@ -513,6 +544,15 @@ public class Region implements Comparable<Region> {
 		float ambientOcclusion2 = getAmbientOcclusion((int)x2, (int)y2, (int)z2, axis, n);
 		float ambientOcclusion3 = getAmbientOcclusion((int)x3, (int)y3, (int)z3, axis, n);
 		float ambientOcclusion4 = getAmbientOcclusion((int)x4, (int)y4, (int)z4, axis, n);
+		
+		// set block AO based on floor or cieling AO
+		if (axis == Axis.POS_Y && (int)y1 < HEIGHT) {
+			modelAO[(int)x1][(int)y1][(int)z1] = 
+					(ambientOcclusion1 + ambientOcclusion2 + ambientOcclusion3 + ambientOcclusion4)/3f;
+		} else if (axis == Axis.NEG_Y && (int)y1 > 0) {
+			modelAO[(int)x1][(int)y1-1][(int)z1] = 
+					(ambientOcclusion1 + ambientOcclusion2 + ambientOcclusion3 + ambientOcclusion4)/3f;
+		}
 
 		// flip quad if necessary because of ambient occlusion
 		// see "details regarding meshing":

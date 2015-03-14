@@ -1,5 +1,7 @@
 package shivanhunter.voxelgame;
 
+import com.badlogic.gdx.math.MathUtils;
+
 public class Noise {
 	private static final int
 		FNV_PRIME = 0x1000193,
@@ -39,6 +41,22 @@ public class Noise {
 		
 		//if (hash*INV_2_31 > 0) return 1; else return -1;
 		return hash*INV_2_31;
+	}
+	
+	/**
+	 * Gets the value of noise for the given coorinates and seed as an integer
+	 * between 0 (inclusive) and the given range (exclusive).
+	 * 
+	 * @param x the X coordinate
+	 * @param y the Y coordinate
+	 * @param z the Z coordinate
+	 * @param seed the seed (should remain constant)
+	 * @param range the number of possible integer values
+	 * @return an integer between 0 (inclusive) and the given range (exclusive).
+	 */
+	public static int get(int x, int y, int z, long seed, int range) {
+		float noise = Math.abs(get(x, y, z, seed));
+		return MathUtils.clamp((int)(noise*range), 0, range);
 	}
 	
 	/**
